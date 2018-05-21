@@ -1,17 +1,27 @@
 #!/bin/bash
 
+# Internal battery
 BATTERY=0
-BATTERY_INFO=$(acpi -b | grep "Battery ${BATTERY}")
-BATTERY_STATE=$(echo "${BATTERY_INFO}" | grep -wo "Full\|Charging\|Discharging")
-BATTERY_POWER=$(echo "${BATTERY_INFO}" | grep -o '[0-9]\+%' | tr -d '%')
+BATTERY0_INFO=$(acpi -b | grep "Battery ${BATTERY}")
+BATTERY0_STATE=$(echo "${BATTERY0_INFO}" | grep -wo "Full\|Charging\|Discharging")
+BATTERY0_POWER=$(echo "${BATTERY0_INFO}" | grep -o '[0-9]\+%' | tr -d '%')
+
+# Extra battery
+BATTERY=1
+BATTERY1_INFO=$(acpi -b | grep "Battery ${BATTERY}")
+BATTERY1_STATE=$(echo "${BATTERY1_INFO}" | grep -wo "Full\|Charging\|Discharging")
+BATTERY1_POWER=$(echo "${BATTERY1_INFO}" | grep -o '[0-9]\+%' | tr -d '%')
+
+# Average power across both batteries
+BATTERY_POWER=$(((BATTERY0_POWER + BATTERY1_POWER) / 2))
 
 URGENT_VALUE=10
 
-if [[ "${BATTERY_STATE}" = "Charging" ]]; then
+if [[ "${BATTERY0_STATE}" == "Charging" || "${BATTERY1_STATE}" == "Charging" ]]; then
   echo "${BATTERY_POWER}%+"
   echo "${BATTERY_POWER}%+"
   echo ""
-elif [[ "${BATTERY_STATE}" = "Discharging" ]]; then
+elif [[ "${BATTERY0_STATE}" == "Discharging" || "${BATTERY1_STATE}" == "Discharging" ]]; then
   echo "${BATTERY_POWER}%-"
   echo "${BATTERY_POWER}%-"
   echo ""
