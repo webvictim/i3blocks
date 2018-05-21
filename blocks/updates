@@ -1,0 +1,7 @@
+#!/bin/bash
+DISTRO=$(lsb_release -a | grep -Eqi 'Fedora|Red Hat')
+if [ $? -eq 0 ]; then
+	yum check-update --quiet | grep '^[a-Z0-9]' | wc -l
+else
+	apt-get --just-print upgrade 2>&1 | perl -ne 'if (/Inst\s([\w,\-,\d,\.,~,:,\+]+)\s\[([\w,\-,\d,\.,~,:,\+]+)\]\s\(([\w,\-,\d,\.,~,:,\+]+)\)? /i) {print "PROGRAM: $1 INSTALLED: $2 AVAILABLE: $3\n"}' | wc -l
+fi
