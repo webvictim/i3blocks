@@ -21,6 +21,15 @@ if [[ "${KEY_FOUND}" == "false" ]]; then
     exit 1
 fi
 
+# you need 'jq' installed for JSON processing too
+JQ_STATUS=$(command -v jq)
+if [[ $? -gt 0 ]]; then
+    echo "Install JQ"
+    echo "Install JQ"
+    echo ""
+    exit 1
+fi
+
 # Check on http://openweathermap.org/find
 CITY_ID="${BLOCK_INSTANCE}"
 if [[ "${BLOCK_INSTANCE}" == "" ]]; then
