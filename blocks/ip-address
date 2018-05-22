@@ -1,9 +1,15 @@
-#!/bin/bash
-
-IP_ADDRESS=$(ip route get 1 | awk '{print $NF;exit}')
-
-if [[ "${IP_ADDRESS}" != "" ]]; then
-  echo "${IP_ADDRESS}"
-  echo "${IP_ADDRESS}"
-  echo ""
+#!/bin/sh
+if [[ "$BLOCK_BUTTON" -eq 1 ]]; then
+    external_ip=$(curl -s icanhazip.com)
+    hostname=$(dig +short -x $external_ip)
+	output=${hostname%.}
+elif [[ "$BLOCK_BUTTON" -eq 3 ]]; then
+    local_ip=$(hostname -I | cut -d' ' -f1)
+    output=$local_ip
+else
+    external_ip=$(curl -s icanhazip.com)
+    output=$external_ip
 fi
+echo "$output"
+echo "$output"
+echo ""

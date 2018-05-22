@@ -14,7 +14,7 @@ fi
 DEVICE=$(pacmd stat | grep 'Default sink name')
 if [[ "$DEVICE" =~ "Lenovo_ThinkPad_Thunderbolt_3_Dock_USB_Audio" ]]; then
     statusLine="Speakers"
-elif [[ "$DEVICE" =~ "Sennheiser" ]]; then
+elif [[ "$DEVICE" =~ "Sennheiser_Sennheiser_3D_G4ME1" ]]; then
     statusLine="Headset"
 elif [[ "$DEVICE" =~ "pci-0000_00_1f.3" ]]; then
     statusLine="Internal"

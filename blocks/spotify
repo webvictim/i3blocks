@@ -12,7 +12,12 @@ elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
 fi
 
 spotifyStatus=$(~/bin/spotify.py)
+pauseStatus=$(qdbus org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlaybackStatus)
+pauseString=""
+if [[ "${pauseStatus}" == "Paused" ]]; then
+    pauseString=" "
+fi
 
-echo "${spotifyStatus}"
-echo "${spotifyStatus}"
+echo "${spotifyStatus} ${pauseString}"
+echo "${spotifyStatus} ${pauseString}"
 echo ""

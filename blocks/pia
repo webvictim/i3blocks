@@ -1,0 +1,12 @@
+#!/bin/bash
+
+VPN_STATUS=$(nmcli con show id "PIA - London" | grep VPN-STATE | grep -q "VPN connected")
+if [ $? -eq 0 ]; then
+    VPN_STATUS="VPN on"
+else
+    VPN_STATUS="VPN off"
+fi
+
+echo "${VPN_STATUS}"
+echo "${VPN_STATUS}"
+echo ""

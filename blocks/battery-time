@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# Internal battery
+BATTERY=0
+BATTERY0_INFO=$(acpi -b | grep "Battery ${BATTERY}")
+BATTERY0_STATE=$(echo "${BATTERY0_INFO}" | grep -wo "Full\|Charging\|Discharging")
+BATTERY0_POWER=$(echo "${BATTERY0_INFO}" | grep -o '[0-9]\+%' | tr -d '%')
+BATTERY0_TIME=$(echo "${BATTERY0_INFO}" | cut -d, -f3 | cut -d' ' -f2)
+if [[ "${BATTERY0_TIME}" != "" ]]; then
+    TIME=0
+    BATTERY0_TIME=$(echo "${BATTERY0_INFO}" | cut -d, -f3 | cut -d' ' -f2 | awk -F: '{h=$1+0;m=$2;print h":"m}')
+fi
+
+# Extra battery
+BATTERY=1
+BATTERY1_INFO=$(acpi -b | grep "Battery ${BATTERY}")
+BATTERY1_STATE=$(echo "${BATTERY1_INFO}" | grep -wo "Full\|Charging\|Discharging")
+BATTERY1_POWER=$(echo "${BATTERY1_INFO}" | grep -o '[0-9]\+%' | tr -d '%')
+BATTERY1_TIME=$(echo "${BATTERY1_INFO}" | cut -d, -f3 | cut -d' ' -f2)
+if [[ "${BATTERY1_TIME}" != "" ]]; then
+    TIME=1
+    BATTERY1_TIME=$(echo "${BATTERY1_INFO}" | cut -d, -f3 | cut -d' ' -f2 | awk -F: '{h=$1+0;m=$2;print h":"m}')
+fi
+
+# Average power across both batteries
+BATTERY_POWER=$(((BATTERY0_POWER + BATTERY1_POWER) / 2))
+
+# Get time from whichever is displaying it
+BATTERY_TIME=""
+if [[ "${TIME}" == 0 ]]; then
+    BATTERY_TIME=" (${BATTERY0_TIME})"
+elif [[ "${TIME}" == 1 ]]; then
+    BATTERY_TIME=" (${BATTERY1_TIME})"
+fi
+
+URGENT_VALUE=10
+
+if [[ "${BATTERY0_STATE}" == "Charging" || "${BATTERY1_STATE}" == "Charging" ]]; then
+  echo "${BATTERY_POWER}%+${BATTERY_TIME}"
+  echo "${BATTERY_POWER}%+${BATTERY_TIME}"
+  echo ""
+elif [[ "${BATTERY0_STATE}" == "Discharging" || "${BATTERY1_STATE}" == "Discharging" ]]; then
+  echo "${BATTERY_POWER}%-${BATTERY_TIME}"
+  echo "${BATTERY_POWER}%-${BATTERY_TIME}"
+  echo ""
+else
+  echo "${BATTERY_POWER}%${BATTERY_TIME}"
+  echo "${BATTERY_POWER}%${BATTERY_TIME}"
+  echo ""
+fi
+
+if [[ "${BATTERY_POWER}" -le "${URGENT_VALUE}" ]]; then
+  exit 33
+fi
