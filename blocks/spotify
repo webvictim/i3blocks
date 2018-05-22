@@ -18,6 +18,6 @@ if [[ "${pauseStatus}" == "Paused" ]]; then
     pauseString=" "
 fi
 
-echo "${spotifyStatus} ${pauseString}"
-echo "${spotifyStatus} ${pauseString}"
+echo "${spotifyStatus}${pauseString}"
+echo "${spotifyStatus}${pauseString}"
 echo ""
