@@ -1,4 +1,21 @@
 #!/bin/bash
+BLOCK_SIGNAL=2
+PANEL_ONLY="eDP1 "
+
+if [ -f /tmp/.display-active ]; then
+    displayActive=$(cat /tmp/.display-active)
+    if [[ "${displayActive}" != "Panel" ]]; then
+        exit 0
+    fi
+else
+    xrandrOut=$(xrandr)
+    panelName="eDP1"
+    panelRANDR="${panelName} "
+    activeDisplays=$(echo "${xrandrOut}" | grep " connected" | sed -e "s/\([A-Z0-9]\+\) connected.*/\1/" | tr -s '\n' ' ')
+    if [[ "${activeDisplays}" != "${panelRANDR}" ]]; then
+        exit 0
+    fi
+fi
 
 # One of the following: xrandr, xbacklight, kernel
 METHOD="xbacklight"
@@ -6,9 +23,19 @@ METHOD="xbacklight"
 # Left click
 if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
   xbacklight -inc 5
+  pkill -RTMIN+${BLOCK_SIGNAL} i3blocks
 # Right click
 elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
   xbacklight -dec 5
+  pkill -RTMIN+${BLOCK_SIGNAL} i3blocks
+# Scroll up
+elif [[ "${BLOCK_BUTTON}" -eq 4 ]]; then
+  xbacklight -inc 5
+  pkill -RTMIN+${BLOCK_SIGNAL} i3blocks
+# Scroll down
+elif [[ "${BLOCK_BUTTON}" -eq 5 ]]; then
+  xbacklight -dec 5
+  pkill -RTMIN+${BLOCK_SIGNAL} i3blocks
 fi
 
 URGENT_VALUE=10

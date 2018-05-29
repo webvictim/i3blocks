@@ -1,0 +1,17 @@
+#!/bin/bash
+ICON="" # moon (sleep)
+
+# left click (hybrid sleep)
+if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
+    systemctl hybrid-sleep
+# middle click (hibernate)
+elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
+    systemctl hibernate
+# right click (sleep only)
+elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
+    systemctl suspend
+fi
+
+echo "${ICON}"
+echo "${ICON}"
+echo ""
