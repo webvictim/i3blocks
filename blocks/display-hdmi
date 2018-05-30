@@ -1,0 +1,64 @@
+#!/bin/bash
+
+xrandrOut=$(xrandr)
+
+externalName="HDMI2"
+panelName="eDP1"
+
+externalString="External"
+panelString="Panel"
+
+externalRANDR="${panelName} ${externalName} "
+panelRANDR="${panelName} "
+
+activeDisplays=$(echo "${xrandrOut}" | grep " connected" | sed -e "s/\([A-Z0-9]\+\) connected.*/\1/" | tr -s '\n' ' ')
+externalConnected=false
+if [[ "${activeDisplays}" == "${externalRANDR}" ]]; then
+    externalConnected=true
+fi
+
+displayFile="/tmp/.display-active"
+
+# write current state to file if it doesn't exist
+if [ ! -f ${displayFile} ]; then 
+    if [[ "${activeDisplays}" == "${externalRANDR}" ]]; then
+        echo "${externalString}" > ${displayFile}
+    elif [[ "${activeDisplays}" == "${panelRANDR}" ]]; then
+        echo "${panelString}" > ${displayFile}
+    fi
+fi
+
+currentDisplayStatus=$(cat ${displayFile})
+# we should force a display change if the external monitor is unplugged
+if [[ "${currentDisplayStatus}" == "${externalString}" && "${externalConnected}" == "false" ]]; then
+    BLOCK_BUTTON=1
+    targetDisplay=${panelString}
+fi
+
+# left click forces a display change if external is connected
+if [[ "${BLOCK_BUTTON}" -eq "1" ]]; then
+    if [[ "${currentDisplayStatus}" == "${externalString}" ]]; then
+        targetDisplay="${panelString}"
+    elif [[ "${currentDisplayStatus}" == "${panelString}" ]]; then
+        if [[ "${externalConnected}" == true ]]; then
+            targetDisplay="${externalString}"
+        fi
+    fi
+    
+    # Change to external
+    if [[ "${targetDisplay}" == "External" ]]; then
+        $(xrandr --output "${externalName}" --primary --auto --output "${panelName}" --off)
+        echo "${externalString}" > ${displayFile}
+        currentDisplayStatus=${externalString}
+        xset dpms force off; sleep 1; xset dpms force on
+    # Change to panel
+    elif [[ "${targetDisplay}" == "Panel" ]]; then
+        $(xrandr --output "${panelName}" --primary --auto --output "${dpName}" --off)
+        echo "${panelString}" > ${displayFile}
+        currentDisplayStatus=${panelString}
+    fi
+fi
+
+echo "${currentDisplayStatus}"
+echo "${currentDisplayStatus}"
+echo ""
