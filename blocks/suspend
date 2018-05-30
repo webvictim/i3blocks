@@ -5,7 +5,7 @@ ICON="" # moon (sleep)
 if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
     systemctl hybrid-sleep
 # middle click (hibernate)
-elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
+elif [[ "${BLOCK_BUTTON}" -eq 2 ]]; then
     systemctl hibernate
 # right click (sleep only)
 elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
