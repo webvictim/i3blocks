@@ -1,0 +1,33 @@
+#!/bin/bash
+DELAY=0.05
+
+print_status() {
+    artist=$(playerctl metadata artist)
+    title=$(playerctl metadata title)
+    spotifyStatus="${artist} | ${title}"
+    pauseStatus=$(playerctl status)
+    pauseString=""
+    if [[ "${pauseStatus}" == "Paused" ]]; then
+        pauseString=" "
+    fi
+
+    echo "${spotifyStatus}${pauseString}"
+    echo "${spotifyStatus}${pauseString}"
+    echo ""    
+}
+
+# Left click
+if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
+    qdbus org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next
+    sleep ${DELAY}
+# Middle click
+elif [[ "${BLOCK_BUTTON}" -eq 2 ]]; then
+    qdbus org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause
+    sleep ${DELAY}
+# Right click
+elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
+    qdbus org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous
+    sleep ${DELAY}
+fi
+
+print_status

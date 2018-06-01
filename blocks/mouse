@@ -1,0 +1,14 @@
+#!/bin/bash
+ICON="" # mouse pointer
+
+# left click (connect mouse)
+if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
+    /home/gus/bin/mouse.sh connect 2>&1 >/dev/null
+# right click (disconnect mouse"
+elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
+    /home/gus/bin/mouse.sh disconnect 2>&1 >/dev/null
+fi
+
+echo "${ICON}"
+echo "${ICON}"
+echo ""

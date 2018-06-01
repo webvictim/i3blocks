@@ -1,0 +1,14 @@
+#!/bin/bash
+ICON="" # plug
+
+# left click (undock)
+if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
+    /home/gus/bin/undock
+# right click (dock)
+elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
+    /home/gus/bin/dock
+fi
+
+echo "${ICON}"
+echo "${ICON}"
+echo ""
