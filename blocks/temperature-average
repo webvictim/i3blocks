@@ -1,0 +1,16 @@
+#!/bin/bash
+
+TEMP_DEVICE="${BLOCK_INSTANCE:-Core}"
+AVERAGE_TEMP=$(sensors | grep ${TEMP_DEVICE} | awk '{sum+=$3} END {printf("%.0f\n", sum / NR)}')
+
+if [[ "${AVERAGE_TEMP}" == "" ]]; then
+    echo "Error"
+    echo "Error"
+    echo ""
+    exit 1
+fi
+
+echo "${AVERAGE_TEMP}°C"
+echo "${AVERAGE_TEMP}°C"
+echo ""
+
