@@ -51,11 +51,17 @@ if [[ "${BLOCK_BUTTON}" -eq "1" ]]; then
         echo "${externalString}" > ${displayFile}
         currentDisplayStatus=${externalString}
         xset dpms force off; sleep 1; xset dpms force on
+
+        # reload dunst for notifications in the correct place
+        pkill -HUP dunst
     # Change to panel
     elif [[ "${targetDisplay}" == "Panel" ]]; then
         $(xrandr --output "${panelName}" --primary --auto --output "${dpName}" --off)
         echo "${panelString}" > ${displayFile}
         currentDisplayStatus=${panelString}
+
+        # reload dunst for notifications in the correct place
+        pkill -HUP dunst
     fi
 fi
 
