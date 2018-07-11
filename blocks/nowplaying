@@ -2,10 +2,16 @@
 DELAY=0.05
 
 print_status() {
+    pauseStatus=$(playerctl status)
+    if [ $? -gt 0 ]; then
+        exit 0
+    fi
+    if [[ "${pauseStatus}" == "Stopped" ]]; then
+        exit 0
+    fi
     artist=$(playerctl metadata artist)
     title=$(playerctl metadata title)
     spotifyStatus="${artist} | ${title}"
-    pauseStatus=$(playerctl status)
     pauseString=""
     if [[ "${pauseStatus}" == "Paused" ]]; then
         pauseString=" "
