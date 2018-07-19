@@ -1,0 +1,33 @@
+#!/bin/bash
+#CONNECTION_NAME="vpn.home.webvictim.net"
+# example BLOCK_INSTANCE="VPN|vpn.home.webvictim.net"
+BLOCK_CONNECTION_ID=$(echo "${BLOCK_INSTANCE}" | cut -d'|' -f1)
+CONNECTION_NAME=$(echo "${BLOCK_INSTANCE}" | cut -d'|' -f2)
+
+# left click to connect
+if [[ "${BLOCK_BUTTON}" == "1" ]]; then
+    nmcli con up id "${CONNECTION_NAME}" 2>&1 >/dev/null
+# right click to disconnect
+elif [[ "${BLOCK_BUTTON}" == "3" ]]; then
+    nmcli con down id "${CONNECTION_NAME}" 2>&1 >/dev/null
+# middle click to show IP on VPN interface (internal)
+elif [[ "${BLOCK_BUTTON}" == "2" ]]; then
+    ip_address=$(nmcli con show id "${CONNECTION_NAME}" | grep "IP4.ADDRESS\[1\]" | awk '{print $2}' | cut -d'/' -f1)
+    output=${ip_address}
+fi
+
+if [[ "${output}" == "" ]]; then
+    VPN_STATUS=$(nmcli con show id "${CONNECTION_NAME}" | grep VPN-STATE | grep -q "VPN connected")
+    if [ $? -eq 0 ]; then
+        VPN_STATUS="${BLOCK_CONNECTION_ID} on"
+        output=${VPN_STATUS}
+    else
+        VPN_STATUS="${BLOCK_CONNECTION_ID} off"
+        output=${VPN_STATUS}
+    fi
+    output=${VPN_STATUS}
+fi
+
+echo "${output}"
+echo "${output}"
+echo ""
