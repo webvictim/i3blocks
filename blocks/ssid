@@ -7,12 +7,30 @@ SSID_NAME=$(iwgetid -r)
 # You can separate multiple values with \|
 URGENT_VALUE=""
 
-if [[ "${SSID_NAME}" != "" ]]; then
-  echo "${SSID_NAME}"
-  echo "${SSID_NAME}"
-  echo ""
+# left click to show external IP
+if [[ "$BLOCK_BUTTON" -eq 1 ]]; then
+    external_ip=$(curl -s icanhazip.com)
+    output=$external_ip
+# right click to reverse lookup external IP
+elif [[ "$BLOCK_BUTTON" -eq 3 ]]; then
+    external_ip=$(curl -s icanhazip.com)
+    hostname=$(dig +short -x $external_ip)
+    output=${hostname%.}
+# middle click to show internal IP
+elif [[ "${BLOCK_BUTTON}" -eq 2 ]]; then
+    wireless_device=$(iwgetid | awk '{print $1}')
+    internal_ip=$(ip addr list dev ${wireless_device} | egrep "\binet\b" | awk '{print $2}' | cut -d'/' -f1)
+    output=${internal_ip}
+# roll wheel or something else to get back to SSID
+else
+    if [[ "${SSID_NAME}" != "" ]]; then
+        output=${SSID_NAME}
+    fi
+fi
+echo "$output"
+echo "$output"
+echo ""
 
-  if [[ "${URGENT_VALUE}" != "" ]] && [[ $(echo "${SSID_NAME}" | grep -we "${URGENT_VALUE}") != "" ]]; then
+if [[ "${URGENT_VALUE}" != "" ]] && [[ $(echo "${SSID_NAME}" | grep -we "${URGENT_VALUE}") != "" ]]; then
     exit 33
-  fi
 fi

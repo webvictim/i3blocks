@@ -1,0 +1,17 @@
+#!/bin/bash
+FAN_INSTANCE=${BLOCK_INSTANCE:-fan1}
+FAN_SPEED=$(sensors | grep ${FAN_INSTANCE} | awk '{print $2}')
+
+if [[ "${FAN_SPEED}" == "" ]]; then
+    echo "Error"
+    echo "Error"
+    echo ""
+    exit 1
+elif [[ "${FAN_SPEED}" == 0 ]]; then
+    # fan is off
+    exit 0
+fi
+
+echo "${FAN_SPEED}rpm"
+echo "${FAN_SPEED}rpm"
+echo ""
