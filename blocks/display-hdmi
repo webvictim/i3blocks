@@ -2,10 +2,11 @@
 
 xrandrOut=$(xrandr)
 
-externalName="HDMI2"
+#externalName="HDMI2"
+externalName="DP2"
 panelName="eDP1"
 
-externalString="External"
+externalString="HDMI"
 panelString="Panel"
 
 externalRANDR="${panelName} ${externalName} "
@@ -50,13 +51,13 @@ if [[ "${BLOCK_BUTTON}" -eq "1" ]]; then
         $(xrandr --output "${externalName}" --primary --auto --output "${panelName}" --off)
         echo "${externalString}" > ${displayFile}
         currentDisplayStatus=${externalString}
-        xset dpms force off; sleep 1; xset dpms force on
+        #xset dpms force off; sleep 1; xset dpms force on
 
         # reload dunst for notifications in the correct place
         pkill -HUP dunst
     # Change to panel
     elif [[ "${targetDisplay}" == "Panel" ]]; then
-        $(xrandr --output "${panelName}" --primary --auto --output "${dpName}" --off)
+        $(xrandr --output "${panelName}" --primary --auto --output "${externalName}" --off)
         echo "${panelString}" > ${displayFile}
         currentDisplayStatus=${panelString}
 

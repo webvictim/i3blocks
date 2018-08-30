@@ -2,7 +2,8 @@
 
 # Left click
 if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
-  /home/gus/bin/audio/devices/speakers.sh
+  #/home/gus/bin/audio/devices/speakers.sh
+  /home/gus/bin/audio/devices/speakers-usb.sh
 # Middle click
 elif [[ "${BLOCK_BUTTON}" -eq 2 ]]; then
   /home/gus/bin/audio/devices/internal-speakers.sh
@@ -21,8 +22,10 @@ elif [[ "${BLOCK_BUTTON}" -eq 8 || "${BLOCK_BUTTON}" -eq 9 ]]; then
 fi
 
 DEVICE=$(pacmd stat | grep 'Default sink name')
-if [[ "$DEVICE" =~ "Lenovo_ThinkPad_Thunderbolt_3_Dock_USB_Audio" ]]; then
-    statusLine="Speakers"
+if [[ "$DEVICE" =~ "C-Media_USB_Headphone" ]]; then
+    statusLine="Speakers (USB)"
+elif [[ "$DEVICE" =~ "Lenovo_ThinkPad_Thunderbolt_3_Dock_USB_Audio" ]]; then
+    statusLine="Speakers (Dock)"
 elif [[ "$DEVICE" =~ "Sennheiser_Sennheiser_3D_G4ME1" ]]; then
     statusLine="Headset"
 elif [[ "$DEVICE" =~ "pci-0000_00_1f.3" ]]; then
