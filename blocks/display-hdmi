@@ -2,8 +2,12 @@
 
 xrandrOut=$(xrandr)
 
+# internal HDMI
 #externalName="HDMI2"
-externalName="DP2"
+# vistar USB-C silver dock
+#externalName="DP2"
+# thunderbolt dock HDMI
+externalName="DP1-1"
 panelName="eDP1"
 
 externalString="HDMI"

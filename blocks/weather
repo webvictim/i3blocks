@@ -50,39 +50,87 @@ ICON_FOG=""
 #SYMBOL_CELSIUS="℃"
 SYMBOL_CELSIUS="°c"
 
-WEATHER_URL="http://api.openweathermap.org/data/2.5/weather?id=${CITY_ID}&appid=${OPENWEATHERMAP_API_KEY}&units=metric"
+# get geolocation data and write it
+GEOLOCATION_FILENAME=/tmp/geoip.json
+curl -s https://freegeoip.app/json/ --header 'Accept: application/json' --header 'Content-Type: application/json' -o ${GEOLOCATION_FILENAME}
+CITY=$(jq -r ".city" ${GEOLOCATION_FILENAME})
+COUNTRY_CODE=$(jq -r ".country_code" ${GEOLOCATION_FILENAME})
+
+GEOLOCATION_FAILED=false
+if [[ "${CITY}" == "" ]]; then
+    GEOLOCATION_FAILED=true
+    WEATHER_OUTPUT="   Geolocation failed"
+fi
+
+# update timezone
+TZFILE=$(readlink /etc/localtime)
+CURRENT_TIMEZONE=${TZFILE##/usr/share/zoneinfo/}
+GEO_TIMEZONE=$(jq -r ".time_zone" ${GEOLOCATION_FILENAME})
+if [[ "${CURRENT_TIMEZONE}" != "${GEO_TIMEZONE}" ]]; then
+    if [ -f /usr/share/zoneinfo/${GEO_TIMEZONE} ]; then
+        logger "Current timezone '${CURRENT_TIMEZONE}' does not match geolocated timezone '${GEO_TIMEZONE}' - updating"
+        sudo rm -f /etc/localtime && sudo ln -s /usr/share/zoneinfo/${GEO_TIMEZONE} /etc/localtime
+    else
+        logger "Cannot find /usr/share/zoneinfo/${GEO_TIMEZONE} to update time zone"
+    fi
+fi
+
+#WEATHER_URL="http://api.openweathermap.org/data/2.5/weather?id=${CITY_ID}&appid=${OPENWEATHERMAP_API_KEY}&units=metric"
+
+if [[ "${BLOCK_INSTANCE}" == "geolocate" ]]; then
+    if [[ "${GEOLOCATION_FAILED}" == "false" ]]; then
+        WEATHER_URL="http://api.openweathermap.org/data/2.5/weather?q=${CITY},${COUNTRY_CODE}&appid=${OPENWEATHERMAP_API_KEY}&units=metric"
+    else
+        echo ${WEATHER_OUTPUT}
+        echo ${WEATHER_OUTPUT}
+        echo ""
+        exit 0
+    fi
+else
+    if [[ "${GEOLOCATION_FAILED}" == "false" ]]; then
+        WEATHER_URL="http://api.openweathermap.org/data/2.5/weather?q=${CITY},${COUNTRY_CODE}&appid=${OPENWEATHERMAP_API_KEY}&units=metric"
+    else
+        WEATHER_URL="http://api.openweathermap.org/data/2.5/weather?id=${CITY_ID}&appid=${OPENWEATHERMAP_API_KEY}&units=metric"    
+    fi
+fi
 
 WEATHER_INFO=$(wget -qO- "${WEATHER_URL}")
 #WEATHER_MAIN=$(echo "${WEATHER_INFO}" | grep -o -e '\"main\":\"[a-Z]*\"' | awk -F ':' '{print $2}' | tr -d '"')
 #WEATHER_TEMP=$(echo "${WEATHER_INFO}" | grep -o -e '\"temp\":\-\?[0-9]*' | awk -F ':' '{print $2}' | tr -d '"')
+WEATHER_CITY=$(echo "${WEATHER_INFO}" | jq -r '.name')
+WEATHER_COUNTRY_CODE=$(echo "${WEATHER_INFO}" | jq -r '.sys.country')
 WEATHER_MAIN=$(echo "${WEATHER_INFO}" | jq -r '.weather[].main')
 WEATHER_TEMP=$(printf "%.0f" $(echo "${WEATHER_INFO}" | jq -r '.main.temp'))
+WEATHER_OUTPUT=""
 
 if [[ "${WEATHER_MAIN}" = *Snow* ]]; then
-  echo "${ICON_SNOW}  ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
-  echo "${ICON_SNOW}  ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
-  echo ""
+  WEATHER_OUTPUT+="${ICON_SNOW}  "
 elif [[ "${WEATHER_MAIN}" = *Rain* ]] || [[ "${WEATHER_MAIN}" = *Drizzle* ]]; then
-  echo "${ICON_RAINY}  ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
-  echo "${ICON_RAINY}  ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
-  echo ""
+  WEATHER_OUTPUT+="${ICON_RAINY}  "
 elif [[ "${WEATHER_MAIN}" = *Cloud* ]]; then
-  echo "${ICON_CLOUDY}  ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
-  echo "${ICON_CLOUDY}  ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
-  echo ""
+  WEATHER_OUTPUT+="${ICON_CLOUDY}  "
 elif [[ "${WEATHER_MAIN}" = *Clear* ]]; then
-  echo "${ICON_SUNNY}  ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
-  echo "${ICON_SUNNY}  ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
-  echo ""
+  WEATHER_OUTPUT+="${ICON_SUNNY}  "
 elif [[ "${WEATHER_MAIN}" = *Fog* ]] || [[ "${WEATHER_MAIN}" = *Mist* ]]; then
-  echo "${ICON_FOG}  ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
-  echo "${ICON_FOG}  ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
-  echo ""
+  WEATHER_OUTPUT+="${ICON_FOG}  "
 else
-  echo "${WEATHER_MAIN}  ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
-  echo "${WEATHER_MAIN}  ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
-  echo ""
+  WEATHER_OUTPUT+="${WEATHER_MAIN}  "
 fi
+
+#if [[ "${BLOCK_INSTANCE}" == "geolocate" ]]; then
+#    WEATHER_OUTPUT+="${CITY}, ${COUNTRY_CODE}: ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
+#else
+#    WEATHER_OUTPUT+=" ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
+#fi
+WEATHER_OUTPUT+="${WEATHER_CITY}, ${WEATHER_COUNTRY_CODE}"
+if [[ "${GEOLOCATION_FAILED}" == "false" ]]; then
+    WEATHER_OUTPUT+="  "
+fi
+WEATHER_OUTPUT+=": ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
+
+echo ${WEATHER_OUTPUT}
+echo ${WEATHER_OUTPUT}
+echo ""
 
 if [[ "${WEATHER_TEMP}" -lt "${URGENT_LOWER}" ]] || [[ "${WEATHER_TEMP}" -gt "${URGENT_HIGHER}" ]]; then
   exit 33

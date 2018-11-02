@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# if set to 1, display average charge percentage of both batteries
+# if set to 0 (or not set), show both batteries separately
+DISPLAY_AVERAGE=0
+
 # Internal battery
 BATTERY=0
 BATTERY0_INFO=$(acpi -b | grep "Battery ${BATTERY}")
@@ -13,24 +17,55 @@ BATTERY1_STATE=$(echo "${BATTERY1_INFO}" | grep -wo "Full\|Charging\|Discharging
 BATTERY1_POWER=$(echo "${BATTERY1_INFO}" | grep -o '[0-9]\+%' | tr -d '%')
 
 # Average power across both batteries
-BATTERY_POWER=$(((BATTERY0_POWER + BATTERY1_POWER) / 2))
+if [[ "${DISPLAY_AVERAGE}" == "1" ]]; then
+    BATTERY_POWER=$(((BATTERY0_POWER + BATTERY1_POWER) / 2))
+fi
 
 URGENT_VALUE=10
 
-if [[ "${BATTERY0_STATE}" == "Charging" || "${BATTERY1_STATE}" == "Charging" ]]; then
-  echo "${BATTERY_POWER}%+"
-  echo "${BATTERY_POWER}%+"
-  echo ""
-elif [[ "${BATTERY0_STATE}" == "Discharging" || "${BATTERY1_STATE}" == "Discharging" ]]; then
-  echo "${BATTERY_POWER}%-"
-  echo "${BATTERY_POWER}%-"
-  echo ""
-else
-  echo "${BATTERY_POWER}%"
-  echo "${BATTERY_POWER}%"
-  echo ""
-fi
+if [["${DISPLAY_AVERAGE}" == "1" ]]; then
+    if [[ "${BATTERY0_STATE}" == "Charging" || "${BATTERY1_STATE}" == "Charging" ]]; then
+        echo "${BATTERY_POWER}%+"
+        echo "${BATTERY_POWER}%+"
+        echo ""
+    elif [[ "${BATTERY0_STATE}" == "Discharging" || "${BATTERY1_STATE}" == "Discharging" ]]; then
+        echo "${BATTERY_POWER}%-"
+        echo "${BATTERY_POWER}%-"
+        echo ""
+    else
+        echo "${BATTERY_POWER}%"
+        echo "${BATTERY_POWER}%"
+        echo ""
+    fi
 
-if [[ "${BATTERY_POWER}" -le "${URGENT_VALUE}" ]]; then
-  exit 33
+    if [[ "${BATTERY_POWER}" -le "${URGENT_VALUE}" ]]; then
+        exit 33
+    fi
+else
+    OUTPUT=""
+    if [[ "${BATTERY0_STATE}" == "Charging" ]]; then
+        OUTPUT+="${BATTERY0_POWER}%+"
+    elif [[ "${BATTERY0_STATE}" == "Discharging" ]]; then
+        OUTPUT+="${BATTERY0_POWER}%-"
+    else
+        OUTPUT+="${BATTERY0_POWER}%"
+    fi
+
+    OUTPUT+=" | "
+
+    if [[ "${BATTERY1_STATE}" == "Charging" ]]; then
+        OUTPUT+="${BATTERY1_POWER}%+"
+    elif [[ "${BATTERY1_STATE}" == "Discharging" ]]; then
+        OUTPUT+="${BATTERY1_POWER}%-"
+    else
+        OUTPUT+="${BATTERY1_POWER}%"
+    fi
+
+    echo ${OUTPUT}
+    echo ${OUTPUT}
+    echo ""
+
+    if [[ "${BATTERY0_POWER}" -le "${URGENT_VALUE}" && "${BATTERY1_POWER}" -le "${URGENT_VALUE}" ]]; then
+        exit 33
+    fi
 fi

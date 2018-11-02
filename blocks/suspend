@@ -1,13 +1,13 @@
 #!/bin/bash
 ICON="" # moon (sleep)
 
-# left click (hybrid sleep)
+# left click (suspend then hibernate)
 if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
-    systemctl hybrid-sleep
+    systemctl suspend-then-hibernate
 # middle click (hibernate)
 elif [[ "${BLOCK_BUTTON}" -eq 2 ]]; then
     systemctl hibernate
-# right click (sleep only)
+# right click (hybrid sleep)
 elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
     systemctl suspend
 fi

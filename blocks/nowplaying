@@ -24,15 +24,18 @@ print_status() {
 
 # Left click
 if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
-    qdbus org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next
+    #qdbus org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next
+    playerctl next
     sleep ${DELAY}
 # Middle click
 elif [[ "${BLOCK_BUTTON}" -eq 2 ]]; then
-    qdbus org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause
+    #qdbus org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause
+    playerctl play-pause
     sleep ${DELAY}
 # Right click
 elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
-    qdbus org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous
+    #qdbus org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous
+    playerctl previous
     sleep ${DELAY}
 fi
 

@@ -2,8 +2,10 @@
 
 # Left click
 if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
-  #/home/gus/bin/audio/devices/speakers.sh
-  /home/gus/bin/audio/devices/speakers-usb.sh
+  # thunderbolt dock
+  /home/gus/bin/audio/devices/speakers.sh
+  # USB soundcard
+  #/home/gus/bin/audio/devices/speakers-usb.sh
 # Middle click
 elif [[ "${BLOCK_BUTTON}" -eq 2 ]]; then
   /home/gus/bin/audio/devices/internal-speakers.sh
