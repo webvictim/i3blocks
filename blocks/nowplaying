@@ -2,7 +2,10 @@
 DELAY=0.05
 
 print_status() {
-    pauseStatus=$(playerctl status)
+    pauseStatus=$(playerctl status 2>&1)
+    if [[ "${pauseStatus}" == "No players found" ]]; then
+        exit 0
+    fi
     if [ $? -gt 0 ]; then
         exit 0
     fi
