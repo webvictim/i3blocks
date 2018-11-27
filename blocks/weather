@@ -4,6 +4,7 @@
 # get your own API key by registering at http://openweathermap.org 
 # put it in ~/.config/i3blocks/openweathermap_api_key as a single line:
 # OPENWEATHERMAP_API_KEY="<your key here>"
+GEOLOCATION_IGNORE_FILE=/tmp/weather-geolocation-ignored
 
 # read API key from file
 KEY_FOUND=false
@@ -28,6 +29,14 @@ if [[ $? -gt 0 ]]; then
     echo "Install JQ"
     echo ""
     exit 1
+fi
+
+# left click will write a file that ignores geolocation until the next reboot
+if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
+    touch ${GEOLOCATION_IGNORE_FILE}
+# right click will remove this file again
+elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
+    rm -f ${GEOLOCATION_IGNORE_FILE}
 fi
 
 # Check on http://openweathermap.org/find
@@ -56,6 +65,13 @@ curl -s https://freegeoip.app/json/ --header 'Accept: application/json' --header
 CITY=$(jq -r ".city" ${GEOLOCATION_FILENAME})
 COUNTRY_CODE=$(jq -r ".country_code" ${GEOLOCATION_FILENAME})
 
+# are we ignoring geolocation?
+GEOLOCATION_IGNORED=false
+if [ -f ${GEOLOCATION_IGNORE_FILE} ]; then
+    GEOLOCATION_IGNORED=true
+fi
+
+# check whether geolocation failed
 GEOLOCATION_FAILED=false
 if [[ "${CITY}" == "" ]]; then
     GEOLOCATION_FAILED=true
@@ -63,15 +79,32 @@ if [[ "${CITY}" == "" ]]; then
 fi
 
 # update timezone
+PREVIOUS_TZFILENAME="/tmp/previous-timezone"
+GEO_TZFILENAME="/tmp/geo-timezone"
 TZFILE=$(readlink /etc/localtime)
 CURRENT_TIMEZONE=${TZFILE##/usr/share/zoneinfo/}
+PREVIOUS_TIMEZONE_FOUND=false
+if [ -f "${PREVIOUS_TZFILENAME}" ]; then
+    PREVIOUS_TIMEZONE_FOUND=true
+    PREVIOUS_TZFILE=$(readlink /tmp/previous-timezone)
+    PREVIOUS_TIMEZONE=${TZFILE##/usr/share/zoneinfo/}
+fi
 GEO_TIMEZONE=$(jq -r ".time_zone" ${GEOLOCATION_FILENAME})
 if [[ "${CURRENT_TIMEZONE}" != "${GEO_TIMEZONE}" ]]; then
-    if [ -f /usr/share/zoneinfo/${GEO_TIMEZONE} ]; then
+    if [[ "${GEOLOCATION_IGNORED}" == "true" ]]; then
+        if [[ "${CURRENT_TIMEZONE}" != "${PREVIOUS_TIMEZONE}" ]]; then
+            logger "Current timezone '${CURRENT_TIMEZONE}' does not match previous timezone '${PREVIOUS_TIMEZONE}' and geolocation is ignored - updating"
+            sudo rm -f /etc/localtime && sudo ln -s /usr/share/zoneinfo/${PREVIOUS_TIMEZONE} /etc/localtime
+            sudo rm -f ${GEO_TZFILENAME} && sudo ln -s /usr/share/zoneinfo/${GEO_TIMEZONE} ${GEO_TZFILENAME}
+        else
+            logger "Cannot find /usr/share/zoneinfo/${PREVIOUS_TIMEZONE} to update to previous time zone"            
+        fi
+    elif [ -f /usr/share/zoneinfo/${GEO_TIMEZONE} ]; then
         logger "Current timezone '${CURRENT_TIMEZONE}' does not match geolocated timezone '${GEO_TIMEZONE}' - updating"
+        sudo rm -f ${PREVIOUS_TZFILENAME} && sudo ln -s /usr/share/zoneinfo/${CURRENT_TIMEZONE} ${PREVIOUS_TZFILENAME}
         sudo rm -f /etc/localtime && sudo ln -s /usr/share/zoneinfo/${GEO_TIMEZONE} /etc/localtime
     else
-        logger "Cannot find /usr/share/zoneinfo/${GEO_TIMEZONE} to update time zone"
+        logger "Cannot find /usr/share/zoneinfo/${GEO_TIMEZONE} to update to geolocated time zone"
     fi
 fi
 
@@ -87,7 +120,7 @@ if [[ "${BLOCK_INSTANCE}" == "geolocate" ]]; then
         exit 0
     fi
 else
-    if [[ "${GEOLOCATION_FAILED}" == "false" ]]; then
+    if [[ "${GEOLOCATION_FAILED}" == "false" || "${GEOLOCATION_IGNORED}" != "true" ]]; then
         WEATHER_URL="http://api.openweathermap.org/data/2.5/weather?q=${CITY},${COUNTRY_CODE}&appid=${OPENWEATHERMAP_API_KEY}&units=metric"
     else
         WEATHER_URL="http://api.openweathermap.org/data/2.5/weather?id=${CITY_ID}&appid=${OPENWEATHERMAP_API_KEY}&units=metric"    
@@ -123,7 +156,7 @@ fi
 #    WEATHER_OUTPUT+=" ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
 #fi
 WEATHER_OUTPUT+="${WEATHER_CITY}, ${WEATHER_COUNTRY_CODE}"
-if [[ "${GEOLOCATION_FAILED}" == "false" ]]; then
+if [[ "${GEOLOCATION_FAILED}" == "false" && "${GEOLOCATION_IGNORED}" != "true" ]]; then
     WEATHER_OUTPUT+="  "
 fi
 WEATHER_OUTPUT+=": ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
