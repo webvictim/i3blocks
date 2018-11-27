@@ -1,7 +1,8 @@
 #!/bin/bash
 
-TEMP_DEVICE="${BLOCK_INSTANCE:-Core}"
-TEMP=$(sensors | grep -A2 acpitz | grep ${TEMP_DEVICE} | awk '{printf ("%.0f\n", $2)}')
+TEMP_DEVICE="${BLOCK_INSTANCE:-Package}"
+#TEMP=$(sensors | grep -A2 acpitz | grep ${TEMP_DEVICE} | awk '{printf ("%.0f\n", $2)}')
+TEMP=$(sensors | grep -A2 coretemp | grep ${TEMP_DEVICE} | awk -F: '{printf ("%.0f\n", $2)}')
 
 if [[ "${TEMP}" == "" ]]; then
     echo "Error"
