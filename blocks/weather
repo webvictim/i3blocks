@@ -108,6 +108,12 @@ if [[ "${CURRENT_TIMEZONE}" != "${GEO_TIMEZONE}" ]]; then
     fi
 fi
 
+# write geolocated coordinates to file for flux
+#LATITUDE=$(jq -r "latitude" ${GEOLOCATION_FILENAME})
+#echo "${LATITUDE}" > /tmp/current_latitude
+#LONGITUDE=$(jq -r "longitude" ${GEOLOCATION_FILENAME})
+#echo "${LONGITUDE}" > /tmp/current_longitude
+
 #WEATHER_URL="http://api.openweathermap.org/data/2.5/weather?id=${CITY_ID}&appid=${OPENWEATHERMAP_API_KEY}&units=metric"
 
 if [[ "${BLOCK_INSTANCE}" == "geolocate" ]]; then
@@ -144,7 +150,7 @@ elif [[ "${WEATHER_MAIN}" = *Cloud* ]]; then
   WEATHER_OUTPUT+="${ICON_CLOUDY}  "
 elif [[ "${WEATHER_MAIN}" = *Clear* ]]; then
   WEATHER_OUTPUT+="${ICON_SUNNY}  "
-elif [[ "${WEATHER_MAIN}" = *Fog* ]] || [[ "${WEATHER_MAIN}" = *Mist* ]]; then
+elif [[ "${WEATHER_MAIN}" = *Fog* ]] || [[ "${WEATHER_MAIN}" = *Mist* ]] || [[ "${WEATHER_MAIN}" = *Haze* ]]; then
   WEATHER_OUTPUT+="${ICON_FOG}  "
 else
   WEATHER_OUTPUT+="${WEATHER_MAIN}  "
@@ -164,6 +170,9 @@ WEATHER_OUTPUT+=": ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
 echo ${WEATHER_OUTPUT}
 echo ${WEATHER_OUTPUT}
 echo ""
+
+# relaunch flux if needed
+~/bin/flux.sh 2>&1 >/dev/null
 
 if [[ "${WEATHER_TEMP}" -lt "${URGENT_LOWER}" ]] || [[ "${WEATHER_TEMP}" -gt "${URGENT_HIGHER}" ]]; then
   exit 33
