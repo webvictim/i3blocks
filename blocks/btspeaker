@@ -1,0 +1,14 @@
+#!/bin/bash
+ICON="" # speaker
+
+# left click (connect speaker)
+if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
+    /home/gus/bin/btspeaker.sh connect 2>&1 >/dev/null
+# right click (disconnect speaker"
+elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
+    /home/gus/bin/btspeaker.sh disconnect 2>&1 >/dev/null
+fi
+
+echo "${ICON}"
+echo "${ICON}"
+echo ""
