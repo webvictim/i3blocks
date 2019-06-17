@@ -1,6 +1,7 @@
 #!/bin/bash
 FAN_INSTANCE=${BLOCK_INSTANCE:-fan1}
-FAN_SPEED=$(sensors | grep ${FAN_INSTANCE} | awk '{print $2}')
+CLARIFIER="thinkpad-isa-0000"
+FAN_SPEED=$(sensors | grep -A2 ${CLARIFIER} | grep ${FAN_INSTANCE} | awk '{print $2}')
 
 if [[ "${FAN_SPEED}" == "" ]]; then
     echo "Error"
