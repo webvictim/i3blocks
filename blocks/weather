@@ -61,9 +61,20 @@ SYMBOL_CELSIUS="°c"
 
 # get geolocation data and write it
 GEOLOCATION_FILENAME=/tmp/geoip.json
-curl -s https://freegeoip.app/json/ --header 'Accept: application/json' --header 'Content-Type: application/json' -o ${GEOLOCATION_FILENAME}
+PREV_GEOLOCATION_FILENAME=${GEOLOCATION_FILENAME}.prev
+GEOLOCATION_FAILED=false
+curl -sL https://freegeoip.app/json/ --header 'Accept: application/json' --header 'Content-Type: application/json' -o ${GEOLOCATION_FILENAME}
 CITY=$(jq -r ".city" ${GEOLOCATION_FILENAME})
+if [ "${CITY}" == "" ]; then
+    CITY=$(jq -r ".city" ${PREV_GEOLOCATION_FILENAME})
+    GEOLOCATION_FAILED=true
+fi
+
 COUNTRY_CODE=$(jq -r ".country_code" ${GEOLOCATION_FILENAME})
+if [ "${COUNTRY_CODE}" == "" ]; then
+    COUNTRY_CODE=$(jq -r ".country_code" ${PREV_GEOLOCATION_FILENAME})
+    GEOLOCATION_FAILED=true
+fi
 
 # are we ignoring geolocation?
 GEOLOCATION_IGNORED=false
@@ -72,9 +83,7 @@ if [ -f ${GEOLOCATION_IGNORE_FILE} ]; then
 fi
 
 # check whether geolocation failed
-GEOLOCATION_FAILED=false
-if [[ "${CITY}" == "" ]]; then
-    GEOLOCATION_FAILED=true
+if [[ "${GEOLOCATION_FAILED}" == "true" ]]; then
     WEATHER_OUTPUT="   Geolocation failed"
 fi
 
@@ -133,7 +142,14 @@ else
     fi
 fi
 
+WEATHER_FILENAME=/tmp/weather.txt
+PREV_WEATHER_FILENAME=${WEATHER_FILENAME}.prev
 WEATHER_INFO=$(wget -qO- "${WEATHER_URL}")
+echo "${WEATHER_INFO}" > ${WEATHER_FILENAME}
+if [ jq -e >/dev/null 2>&1 < ${WEATHER_FILENAME} -ne 2 ]; then
+    GEOLOCATION_FAILED="true"
+    WEATHER_INFO=$(cat ${PREV_WEATHER_FILENAME})
+fi
 #WEATHER_MAIN=$(echo "${WEATHER_INFO}" | grep -o -e '\"main\":\"[a-Z]*\"' | awk -F ':' '{print $2}' | tr -d '"')
 #WEATHER_TEMP=$(echo "${WEATHER_INFO}" | grep -o -e '\"temp\":\-\?[0-9]*' | awk -F ':' '{print $2}' | tr -d '"')
 WEATHER_CITY=$(echo "${WEATHER_INFO}" | jq -r '.name')
@@ -161,15 +177,35 @@ fi
 #else
 #    WEATHER_OUTPUT+=" ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
 #fi
+
+GEOLOCATION_SYMBOL=""
 WEATHER_OUTPUT+="${WEATHER_CITY}, ${WEATHER_COUNTRY_CODE}"
 if [[ "${GEOLOCATION_FAILED}" == "false" && "${GEOLOCATION_IGNORED}" != "true" ]]; then
-    WEATHER_OUTPUT+="  "
+    WEATHER_OUTPUT+=" ${GEOLOCATION_SYMBOL} "
+elif [[ "${GEOLOCATION_FAILED}" == "true" ]]; then
+    GEOLOCATION_SYMBOL=""
 fi
 WEATHER_OUTPUT+=": ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
 
 echo ${WEATHER_OUTPUT}
 echo ${WEATHER_OUTPUT}
 echo ""
+
+# take a backup of the working weather file
+if [ -f ${WEATHER_FILENAME} ]; then
+    if [[ "${GEOLOCATION_FAILED}" == "false" ]]; then
+        rm -f ${PREV_WEATHER_FILENAME}
+        cp ${WEATHER_FILENAME} ${PREV_WEATHER_FILENAME}
+    fi
+fi
+
+# take a backup of the working geolocation file
+if [ -f ${GEOLOCATION_FILENAME} ]; then
+    if [[ "${GEOLOCATION_FAILED}" == "false" ]]; then
+        rm -f ${PREV_GEOLOCATION_FILENAME}
+        cp ${GEOLOCATION_FILENAME} ${PREV_GEOLOCATION_FILENAME}
+    fi
+fi
 
 # relaunch flux if needed
 ~/bin/flux.sh 2>&1 >/dev/null
