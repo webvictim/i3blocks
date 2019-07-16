@@ -43,6 +43,10 @@ fi
 CITY_ID="${BLOCK_INSTANCE}"
 if [[ "${BLOCK_INSTANCE}" == "" ]]; then
     CITY_ID=$1
+    if [[ "$1" == "" ]]; then
+        echo "You need to supply either a BLOCK_INSTANCE environment variable or a city on the command line"
+        exit 1
+    fi
 fi
 
 URGENT_LOWER=0
@@ -59,32 +63,34 @@ ICON_FOG=""
 #SYMBOL_CELSIUS="℃"
 SYMBOL_CELSIUS="°c"
 
-# get geolocation data and write it
-GEOLOCATION_FILENAME=/tmp/geoip.json
-PREV_GEOLOCATION_FILENAME=${GEOLOCATION_FILENAME}.prev
-GEOLOCATION_FAILED=false
-curl -sL https://freegeoip.app/json/ --header 'Accept: application/json' --header 'Content-Type: application/json' -o ${GEOLOCATION_FILENAME}
-CITY=$(jq -r ".city" ${GEOLOCATION_FILENAME})
-if [ "${CITY}" == "" ]; then
-    CITY=$(jq -r ".city" ${PREV_GEOLOCATION_FILENAME})
-    GEOLOCATION_FAILED=true
-fi
-
-COUNTRY_CODE=$(jq -r ".country_code" ${GEOLOCATION_FILENAME})
-if [ "${COUNTRY_CODE}" == "" ]; then
-    COUNTRY_CODE=$(jq -r ".country_code" ${PREV_GEOLOCATION_FILENAME})
-    GEOLOCATION_FAILED=true
-fi
-
 # are we ignoring geolocation?
 GEOLOCATION_IGNORED=false
 if [ -f ${GEOLOCATION_IGNORE_FILE} ]; then
     GEOLOCATION_IGNORED=true
 fi
 
-# check whether geolocation failed
-if [[ "${GEOLOCATION_FAILED}" == "true" ]]; then
-    WEATHER_OUTPUT="   Geolocation failed"
+# get geolocation data and write it
+GEOLOCATION_FILENAME=/tmp/geoip.json
+if [[ "${GEOLOCATION_IGNORED}" == "false" ]]; then
+    PREV_GEOLOCATION_FILENAME=${GEOLOCATION_FILENAME}.prev
+    GEOLOCATION_FAILED=false
+    curl -sL https://freegeoip.app/json/ --header 'Accept: application/json' --header 'Content-Type: application/json' -o ${GEOLOCATION_FILENAME}
+    CITY=$(jq -r ".city" ${GEOLOCATION_FILENAME})
+    if [ "${CITY}" == "" ]; then
+        CITY=$(jq -r ".city" ${PREV_GEOLOCATION_FILENAME})
+        GEOLOCATION_FAILED=true
+    fi
+
+    COUNTRY_CODE=$(jq -r ".country_code" ${GEOLOCATION_FILENAME})
+    if [ "${COUNTRY_CODE}" == "" ]; then
+        COUNTRY_CODE=$(jq -r ".country_code" ${PREV_GEOLOCATION_FILENAME})
+        GEOLOCATION_FAILED=true
+    fi
+
+    # check whether geolocation failed
+    if [[ "${GEOLOCATION_FAILED}" == "true" ]]; then
+        WEATHER_OUTPUT="   Geolocation failed"
+    fi
 fi
 
 # update timezone
@@ -99,21 +105,23 @@ if [ -f "${PREVIOUS_TZFILENAME}" ]; then
     PREVIOUS_TIMEZONE=${TZFILE##/usr/share/zoneinfo/}
 fi
 GEO_TIMEZONE=$(jq -r ".time_zone" ${GEOLOCATION_FILENAME})
-if [[ "${CURRENT_TIMEZONE}" != "${GEO_TIMEZONE}" ]]; then
-    if [[ "${GEOLOCATION_IGNORED}" == "true" ]]; then
-        if [[ "${CURRENT_TIMEZONE}" != "${PREVIOUS_TIMEZONE}" ]]; then
-            logger "Current timezone '${CURRENT_TIMEZONE}' does not match previous timezone '${PREVIOUS_TIMEZONE}' and geolocation is ignored - updating"
-            sudo rm -f /etc/localtime && sudo ln -s /usr/share/zoneinfo/${PREVIOUS_TIMEZONE} /etc/localtime
-            sudo rm -f ${GEO_TZFILENAME} && sudo ln -s /usr/share/zoneinfo/${GEO_TIMEZONE} ${GEO_TZFILENAME}
+if [[ $(echo ${GEO_TIMEZONE} | grep -q "parse error") -ne 0 ]]; then
+    if [[ "${CURRENT_TIMEZONE}" != "${GEO_TIMEZONE}" ]]; then
+        if [[ "${GEOLOCATION_IGNORED}" == "true" ]]; then
+            if [[ "${CURRENT_TIMEZONE}" != "${PREVIOUS_TIMEZONE}" ]]; then
+                logger "Current timezone '${CURRENT_TIMEZONE}' does not match previous timezone '${PREVIOUS_TIMEZONE}' and geolocation is ignored - updating"
+                sudo rm -f /etc/localtime && sudo ln -s /usr/share/zoneinfo/${PREVIOUS_TIMEZONE} /etc/localtime
+                sudo rm -f ${GEO_TZFILENAME} && sudo ln -s /usr/share/zoneinfo/${GEO_TIMEZONE} ${GEO_TZFILENAME}
+            else
+                logger "Cannot find /usr/share/zoneinfo/${PREVIOUS_TIMEZONE} to update to previous time zone"
+            fi
+        elif [ -f /usr/share/zoneinfo/${GEO_TIMEZONE} ]; then
+            logger "Current timezone '${CURRENT_TIMEZONE}' does not match geolocated timezone '${GEO_TIMEZONE}' - updating"
+            sudo rm -f ${PREVIOUS_TZFILENAME} && sudo ln -s /usr/share/zoneinfo/${CURRENT_TIMEZONE} ${PREVIOUS_TZFILENAME}
+            sudo rm -f /etc/localtime && sudo ln -s /usr/share/zoneinfo/${GEO_TIMEZONE} /etc/localtime
         else
-            logger "Cannot find /usr/share/zoneinfo/${PREVIOUS_TIMEZONE} to update to previous time zone"            
+            logger "Cannot find /usr/share/zoneinfo/${GEO_TIMEZONE} to update to geolocated time zone"
         fi
-    elif [ -f /usr/share/zoneinfo/${GEO_TIMEZONE} ]; then
-        logger "Current timezone '${CURRENT_TIMEZONE}' does not match geolocated timezone '${GEO_TIMEZONE}' - updating"
-        sudo rm -f ${PREVIOUS_TZFILENAME} && sudo ln -s /usr/share/zoneinfo/${CURRENT_TIMEZONE} ${PREVIOUS_TZFILENAME}
-        sudo rm -f /etc/localtime && sudo ln -s /usr/share/zoneinfo/${GEO_TIMEZONE} /etc/localtime
-    else
-        logger "Cannot find /usr/share/zoneinfo/${GEO_TIMEZONE} to update to geolocated time zone"
     fi
 fi
 
