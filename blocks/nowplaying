@@ -1,9 +1,10 @@
 #!/bin/bash
 DELAY=0.05
+PLAYERCTL="playerctl --player spotify"
 
 print_status() {
-    pauseStatus=$(playerctl status 2>&1)
-    if [[ "${pauseStatus}" == "No players found" ]]; then
+    pauseStatus=$(${PLAYERCTL}status 2>&1 | head -n1)
+    if [[ "${pauseStatus}" == "No players found" || "${pauseStatus}" == "" ]]; then
         exit 0
     fi
     if [ $? -gt 0 ]; then
@@ -12,8 +13,8 @@ print_status() {
     if [[ "${pauseStatus}" == "Stopped" ]]; then
         exit 0
     fi
-    artist=$(playerctl metadata artist)
-    title=$(playerctl metadata title)
+    artist=$(${PLAYERCTL} metadata artist)
+    title=$(${PLAYERCTL} metadata title)
     spotifyStatus="${artist} | ${title}"
     pauseString=""
     if [[ "${pauseStatus}" == "Paused" ]]; then
@@ -28,17 +29,17 @@ print_status() {
 # Left click
 if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
     #qdbus org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next
-    playerctl next
+    ${PLAYERCTL} next
     sleep ${DELAY}
 # Middle click
 elif [[ "${BLOCK_BUTTON}" -eq 2 ]]; then
     #qdbus org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause
-    playerctl play-pause
+    ${PLAYERCTL} play-pause
     sleep ${DELAY}
 # Right click
 elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
     #qdbus org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous
-    playerctl previous
+    ${PLAYERCTL} previous
     sleep ${DELAY}
 fi
 
