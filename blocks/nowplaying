@@ -3,7 +3,7 @@ DELAY=0.05
 PLAYERCTL="playerctl --player spotify"
 
 print_status() {
-    pauseStatus=$(${PLAYERCTL}status 2>&1 | head -n1)
+    pauseStatus=$(${PLAYERCTL} status 2>&1 | head -n1)
     if [[ "${pauseStatus}" == "No players found" || "${pauseStatus}" == "" ]]; then
         exit 0
     fi
