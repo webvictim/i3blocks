@@ -49,7 +49,7 @@ if [[ "${BLOCK_INSTANCE}" == "" ]]; then
     fi
 fi
 
-URGENT_LOWER=0
+URGENT_LOWER=-10
 URGENT_HIGHER=30
 
 ICON_SUNNY=""
