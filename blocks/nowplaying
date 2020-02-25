@@ -1,6 +1,6 @@
 #!/bin/bash
 DELAY=0.05
-PLAYERCTL="playerctl --player spotify"
+PLAYERCTL="playerctl --player=playerctld"
 
 print_status() {
     pauseStatus=$(${PLAYERCTL} status 2>&1 | head -n1)
