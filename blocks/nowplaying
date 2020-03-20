@@ -1,10 +1,18 @@
 #!/bin/bash
-DELAY=0.05
-PLAYERCTL="playerctl --player=playerctld"
+#DELAY=0.05
+DELAY=0
+PLAYER_LIST="DeaDBeeF,spotify,rhythmbox"
+CHROME_ID=$(playerctl -l | grep chrome)
+
+if [[ "${CHROME_ID}" != "" ]]; then
+    PLAYERCTL="playerctl --player=${PLAYER_LIST}--ignore-player=${CHROME_ID}"
+else
+    PLAYERCTL="playerctl --player=${PLAYER_LIST}"
+fi
 
 print_status() {
     pauseStatus=$(${PLAYERCTL} status 2>&1 | head -n1)
-    if [[ "${pauseStatus}" == "No players found" || "${pauseStatus}" == "" ]]; then
+    if [[ "${pauseStatus}" == "No players found" || "${pauseStatus}" == "No player could handle this command" || "${pauseStatus}" == "" ]]; then
         exit 0
     fi
     if [ $? -gt 0 ]; then
