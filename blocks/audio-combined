@@ -11,7 +11,8 @@ elif [[ "${BLOCK_BUTTON}" -eq 2 ]]; then
   /home/gus/bin/audio/devices/internal-speakers.sh
 # Right click
 elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
-  /home/gus/bin/audio/devices/headset.sh
+  #/home/gus/bin/audio/devices/headset.sh
+  /home/gus/bin/audio/devices/headphone-amp.sh
 # Scroll up
 elif [[ "${BLOCK_BUTTON}" -eq 4 ]]; then
   /home/gus/bin/audio/volume.sh up
@@ -33,6 +34,8 @@ elif [[ "$DEVICE" =~ "Lenovo_ThinkPad_Thunderbolt_3_Dock_USB_Audio" ]]; then
     statusLine="Speakers (Dock)"
 elif [[ "$DEVICE" =~ "Sennheiser_Sennheiser_3D_G4ME1" ]]; then
     statusLine="Headset"
+elif [[ "$DEVICE" =~ "Schiit_Audio_I_m_Fulla_Schiit" ]]; then
+    statusLine="Schiit Fulla"
 elif [[ "$DEVICE" =~ "bluez_sink.11_11_22_03_CC_C1.a2dp_sink" ]]; then
     statusLine="QC25 Bluetooth"
 elif [[ "$DEVICE" =~ "bluez_sink.88_C6_26_91_8B_DF.a2dp_sink" ]]; then
