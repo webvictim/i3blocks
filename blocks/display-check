@@ -1,0 +1,75 @@
+#!/bin/bash
+INHIBIT=false
+#INHIBIT=true
+if [[ "${INHIBIT}" == "true" ]]; then
+    echo "Disabled"
+    echo "Disabled"
+    exit 0
+fi
+
+# internal HDMI port
+#EXTERNAL_NAME="HDMI2"
+# mac USB-C silver dock thing
+#EXTERNAL_NAME="DP2"
+# thunderbolt dock HDMI
+EXTERNAL_NAME="DP1-1"
+
+# nvidia GPU HDMI
+EGPU_NAME="HDMI-0"
+
+PANEL_NAME="eDP1"
+EXTERNAL_STRING="HDMI"
+PANEL_STRING="Panel"
+EGPU_STRING="eGPU HDMI"
+STORE_FILE=/tmp/xrandr-state
+
+LID_STATE=$(cat /proc/acpi/button/lid/LID/state | cut -d: -f2 | tr -d ' ')
+
+read_state () {
+	if [ -f ${STORE_FILE} ]; then
+		STORED_STATE=$(cat ${STORE_FILE})
+		return STORED_STATE
+	fi
+	return ""
+}
+
+EGPU_CONNECTED=false
+if [ $(lspci | grep NVIDIA | wc -l) -gt 0 ]; then
+    EGPU_CONNECTED=true
+    echo "${EGPU_STRING}" > /tmp/xrandr-state
+    OUTPUT="${EGPU_STRING}"
+else
+    # if lid is closed
+    if [[ "${LID_STATE}" == "closed" ]]; then
+        EXTERNAL_CONNECTED=$(xrandr --nograb | grep ${EXTERNAL_NAME} | grep -q connected)
+        # if external is connected
+        if [[ $? -eq 0 ]]; then
+            STORED_STATE=read_state
+            if [[ "${STORED_STATE}" != "${EXTERNAL_STRING}" ]]; then
+                # external on, panel off
+                xrandr --output ${EXTERNAL_NAME} --auto --output ${PANEL_NAME} --off
+                echo "${EXTERNAL_STRING}" > /tmp/xrandr-state
+            fi
+            OUTPUT="${EXTERNAL_STRING}"
+        else
+            if [[ "${STORED_STATE}" != "Panel" ]]; then
+                # panel on, external off
+                xrandr --output ${PANEL_NAME} --auto --output ${EXTERNAL_NAME} --off
+                echo "Panel" > /tmp/xrandr-state
+            fi
+            OUTPUT="${PANEL_STRING}"
+        fi
+    # lid is open
+    else
+        if [[ "${STORED_STATE}" != "Panel" ]]; then
+            # panel on, external off
+            xrandr --output ${PANEL_NAME} --auto --output ${EXTERNAL_NAME} --off
+            OUTPUT="Panel"
+            echo "Panel" > /tmp/xrandr-state
+        fi
+        OUTPUT="${PANEL_STRING}"
+    fi
+fi
+
+echo "${OUTPUT}"
+echo "${OUTPUT}"

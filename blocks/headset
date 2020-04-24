@@ -1,0 +1,14 @@
+#!/bin/bash
+ICON="" # headset
+
+# left click (connect headset)
+if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
+    /home/gus/bin/headset.sh connect 2>&1 >/dev/null
+# right click (disconnect headset"
+elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
+    /home/gus/bin/headset.sh disconnect 2>&1 >/dev/null
+fi
+
+echo "${ICON}"
+echo "${ICON}"
+echo ""
