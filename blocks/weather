@@ -6,6 +6,16 @@
 # OPENWEATHERMAP_API_KEY="<your key here>"
 GEOLOCATION_IGNORE_FILE=/tmp/weather-geolocation-ignored
 
+output() {
+    echo ${WEATHER_OUTPUT}
+    echo ${WEATHER_OUTPUT}
+    echo ""
+}
+
+exit_with_error() {
+    exit 33
+}
+
 # read API key from file
 KEY_FOUND=false
 if [ -f ~/.config/i3blocks/openweathermap_api_key ]; then
@@ -75,6 +85,9 @@ if [[ "${GEOLOCATION_IGNORED}" == "false" ]]; then
     PREV_GEOLOCATION_FILENAME=${GEOLOCATION_FILENAME}.prev
     GEOLOCATION_FAILED=false
     curl -sL https://freegeoip.app/json/ --header 'Accept: application/json' --header 'Content-Type: application/json' -o ${GEOLOCATION_FILENAME}
+    if grep -q "Service unavailable" ${GEOLOCATION_FILENAME}; then
+        GEOLOCATION_FAILED=true
+    fi
     CITY=$(jq -r ".city" ${GEOLOCATION_FILENAME})
     if [ "${CITY}" == "" ]; then
         CITY=$(jq -r ".city" ${PREV_GEOLOCATION_FILENAME})
@@ -86,11 +99,13 @@ if [[ "${GEOLOCATION_IGNORED}" == "false" ]]; then
         COUNTRY_CODE=$(jq -r ".country_code" ${PREV_GEOLOCATION_FILENAME})
         GEOLOCATION_FAILED=true
     fi
+fi
 
-    # check whether geolocation failed
-    if [[ "${GEOLOCATION_FAILED}" == "true" ]]; then
-        WEATHER_OUTPUT="   Geolocation failed"
-    fi
+# check whether geolocation failed
+if [[ "${GEOLOCATION_FAILED}" == "true" ]]; then
+    WEATHER_OUTPUT="   Geolocation failed"
+    output
+    exit_with_error
 fi
 
 # update timezone
@@ -195,9 +210,7 @@ elif [[ "${GEOLOCATION_FAILED}" == "true" ]]; then
 fi
 WEATHER_OUTPUT+=": ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
 
-echo ${WEATHER_OUTPUT}
-echo ${WEATHER_OUTPUT}
-echo ""
+output
 
 # take a backup of the working weather file
 if [ -f ${WEATHER_FILENAME} ]; then
@@ -219,5 +232,5 @@ fi
 ~/bin/flux.sh 2>&1 >/dev/null
 
 if [[ "${WEATHER_TEMP}" -lt "${URGENT_LOWER}" ]] || [[ "${WEATHER_TEMP}" -gt "${URGENT_HIGHER}" ]]; then
-  exit 33
+  exit_with_error
 fi
