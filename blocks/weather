@@ -84,7 +84,9 @@ GEOLOCATION_FILENAME=/tmp/geoip.json
 if [[ "${GEOLOCATION_IGNORED}" == "false" ]]; then
     PREV_GEOLOCATION_FILENAME=${GEOLOCATION_FILENAME}.prev
     GEOLOCATION_FAILED=false
-    curl -sL https://freegeoip.app/json/ --header 'Accept: application/json' --header 'Content-Type: application/json' -o ${GEOLOCATION_FILENAME}
+    # freegeoip.app stopped working at some point
+    #curl -sL https://freegeoip.app/json/ --header 'Accept: application/json' --header 'Content-Type: application/json' -o ${GEOLOCATION_FILENAME}
+    curl -sL https://ifconfig.co/json --header 'Accept: application/json' --header 'Content-Type: application/json' -o ${GEOLOCATION_FILENAME}
     if grep -q "Service unavailable" ${GEOLOCATION_FILENAME}; then
         GEOLOCATION_FAILED=true
     fi
@@ -94,10 +96,17 @@ if [[ "${GEOLOCATION_IGNORED}" == "false" ]]; then
         GEOLOCATION_FAILED=true
     fi
 
-    COUNTRY_CODE=$(jq -r ".country_code" ${GEOLOCATION_FILENAME})
+    USE_REGION_CODE=false
+    COUNTRY_CODE=$(jq -r ".country_iso" ${GEOLOCATION_FILENAME})
+    REGION_CODE=$(jq -r ".region_code" ${GEOLOCATION_FILENAME})
     if [ "${COUNTRY_CODE}" == "" ]; then
-        COUNTRY_CODE=$(jq -r ".country_code" ${PREV_GEOLOCATION_FILENAME})
+        COUNTRY_CODE=$(jq -r ".country_iso" ${PREV_GEOLOCATION_FILENAME})
         GEOLOCATION_FAILED=true
+    # check whether we're in the US or Canada
+    elif [ "${COUNTRY_CODE}" == "CA" ] || [ "${COUNTRY_CODE}" == "US" ]; then
+        # set the state as the second part of the output rather than the country
+        # gives "Dartmouth, NS" rather than "Dartmouth, CA" for example
+        USE_REGION_CODE=true
     fi
 fi
 
@@ -176,7 +185,11 @@ fi
 #WEATHER_MAIN=$(echo "${WEATHER_INFO}" | grep -o -e '\"main\":\"[a-Z]*\"' | awk -F ':' '{print $2}' | tr -d '"')
 #WEATHER_TEMP=$(echo "${WEATHER_INFO}" | grep -o -e '\"temp\":\-\?[0-9]*' | awk -F ':' '{print $2}' | tr -d '"')
 WEATHER_CITY=$(echo "${WEATHER_INFO}" | jq -r '.name')
-WEATHER_COUNTRY_CODE=$(echo "${WEATHER_INFO}" | jq -r '.sys.country')
+if [ "${USE_REGION_CODE}" == "true" ]; then
+    WEATHER_COUNTRY_CODE="${REGION_CODE}"
+else
+    WEATHER_COUNTRY_CODE=$(echo "${WEATHER_INFO}" | jq -r '.sys.country')
+fi
 WEATHER_MAIN=$(echo "${WEATHER_INFO}" | jq -r '.weather[].main')
 WEATHER_TEMP=$(printf "%.0f" $(echo "${WEATHER_INFO}" | jq -r '.main.temp'))
 WEATHER_OUTPUT=""
